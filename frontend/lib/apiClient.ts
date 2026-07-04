@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
 
 // The backend is hosted at localhost:5000 based on the initial prompt or default assumption
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
@@ -34,6 +35,24 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add interceptor to handle 401 errors (e.g. token expired)
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (typeof window !== 'undefined') {
+        useAuthStore.getState().logout();
+        // Redirect to login page only if not already on the login or signup page
+        const path = window.location.pathname;
+        if (path !== '/login' && path !== '/signup' && path !== '/verify-email') {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default apiClient;

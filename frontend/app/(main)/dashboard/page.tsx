@@ -165,7 +165,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
                       <img 
-                        src={emp.profilePicture ? `http://localhost:5000${emp.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=fce7f3&color=db2777`} 
+                        src={emp.profilePicture ? `http://localhost:5000${emp.profilePicture}` : `/default_avatar.png`} 
                         alt={emp.name}
                         className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
                       />

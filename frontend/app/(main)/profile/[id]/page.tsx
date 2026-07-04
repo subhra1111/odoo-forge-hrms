@@ -20,7 +20,7 @@ import {
 export default function ProfilePage() {
   const params = useParams();
   const id = params.id as string;
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, updateUser } = useAuthStore();
   
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -181,6 +181,12 @@ export default function ProfilePage() {
       const res = await updateProfile(employeeId, formData);
       if (res.data && res.data.success) {
         alert('Profile picture updated successfully!');
+        const newAvatarPath = res.data.data.profilePicture 
+          ? `http://localhost:5000${res.data.data.profilePicture}` 
+          : undefined;
+        if (isSelf && newAvatarPath) {
+          updateUser({ avatar: newAvatarPath });
+        }
         loadProfile();
       }
     } catch (err: any) {
@@ -297,7 +303,7 @@ export default function ProfilePage() {
 
   const avatarUrl = employee.profilePicture 
     ? `http://localhost:5000${employee.profilePicture}` 
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=fce7f3&color=db2777`;
+    : `/default_avatar.png`;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-8">

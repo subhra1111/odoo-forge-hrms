@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-sm font-medium text-gray-700">{user?.name || 'Loading...'}</span>
                 <span className="text-xs text-gray-500 capitalize">{user?.role || 'Role'}</span>
               </div>
-              <img src={user?.avatar || 'https://i.pravatar.cc/150'} alt="Profile" className="w-10 h-10 rounded-full border border-gray-200" />
+              <img src={user?.avatar || '/default_avatar.png'} alt="Profile" className="w-10 h-10 rounded-full border border-gray-200" />
             </div>
             
             {isDropdownOpen && (
