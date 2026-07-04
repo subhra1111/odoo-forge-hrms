@@ -100,6 +100,10 @@ export default function LoginPage() {
             )}
           </button>
           
+          <div className="text-center mt-3 text-xs text-gray-500 font-medium leading-relaxed max-w-sm mx-auto">
+            For first time login, check your email. Your ID and password have been sent by HR to your email ID.
+          </div>
+          
           <div className="text-center mt-6">
             <p className="text-sm text-gray-500">
               Company Registration? <Link href="/signup" className="text-pink-600 hover:text-pink-700 font-medium ml-1">Sign Up</Link>
