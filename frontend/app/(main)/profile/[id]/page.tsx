@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Salary State
   const [monthlyWage, setMonthlyWage] = useState(0);
@@ -145,6 +147,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setSaveLoading(true);
       const formData = new FormData();
       formData.append('name', editForm.name);
       formData.append('mobile', editForm.mobile);
@@ -168,6 +171,8 @@ export default function ProfilePage() {
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.error || 'Failed to update profile.');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -259,6 +264,7 @@ export default function ProfilePage() {
       return;
     }
     try {
+      setPasswordLoading(true);
       const res = await changePassword({ oldPassword, newPassword });
       if (res.data && res.data.success) {
         alert('Password updated successfully!');
@@ -268,6 +274,8 @@ export default function ProfilePage() {
       }
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to update password.');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -530,15 +538,26 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                  className="bg-gray-100 hover:bg-gray-200 active:scale-[0.98] text-gray-700 font-semibold px-5 py-2.5 rounded-lg transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-pink-600 hover:bg-pink-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+                  disabled={saveLoading}
+                  className="bg-pink-600 hover:bg-pink-700 active:scale-[0.98] text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Save Changes
+                  {saveLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -709,9 +728,23 @@ export default function ProfilePage() {
                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500" 
                  />
                </div>
-               <button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-4">
-                 Update Password
-               </button>
+                <button 
+                  type="submit" 
+                  disabled={passwordLoading}
+                  className="w-full bg-pink-600 hover:bg-pink-700 active:scale-[0.98] text-white font-semibold py-2.5 rounded-lg transition-all mt-4 flex items-center justify-center space-x-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                >
+                  {passwordLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Update Password</span>
+                  )}
+                </button>
              </form>
            </div>
         )}

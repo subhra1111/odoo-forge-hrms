@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [onboardLoading, setOnboardLoading] = useState(false);
 
   // Form states for onboarding
   const [newName, setNewName] = useState('');
@@ -62,6 +63,7 @@ export default function DashboardPage() {
     }
 
     try {
+      setOnboardLoading(true);
       const res = await onboardEmployee({
         name: newName,
         email: newEmail,
@@ -97,6 +99,8 @@ export default function DashboardPage() {
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.error || 'Failed to onboard employee.');
+    } finally {
+      setOnboardLoading(false);
     }
   };
 
@@ -122,7 +126,7 @@ export default function DashboardPage() {
           {isAdmin && (
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="flex items-center space-x-2 bg-pink-600 hover:bg-pink-700 active:scale-[0.98] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>NEW</span>
@@ -344,8 +348,31 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex justify-end space-x-3">
-               <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors" onClick={() => setShowAddModal(false)}>Cancel</button>
-               <button className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onClick={handleOnboard}>Create Employee</button>
+               <button className="bg-white border border-gray-300 hover:bg-gray-50 active:scale-[0.98] text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all" onClick={() => setShowAddModal(false)}>Cancel</button>
+               <button 
+                 className="bg-pink-600 hover:bg-pink-700 active:scale-[0.98] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-75 disabled:cursor-not-allowed" 
+                 disabled={onboardLoading} 
+                 onClick={async () => {
+                   setOnboardLoading(true);
+                   try {
+                     await handleOnboard();
+                   } finally {
+                     setOnboardLoading(false);
+                   }
+                 }}
+               >
+                 {onboardLoading ? (
+                   <>
+                     <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                     </svg>
+                     <span>Creating...</span>
+                   </>
+                 ) : (
+                   <span>Create Employee</span>
+                 )}
+               </button>
             </div>
           </div>
         </div>
