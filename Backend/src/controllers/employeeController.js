@@ -107,8 +107,10 @@ const onboardEmployee = async (req, res) => {
       break_time_hours: 1
     });
 
-    // Trigger activation email
-    await sendActivationEmail(email, name, employee_id, tempPassword);
+    // Trigger activation email (non-blocking background task)
+    sendActivationEmail(email, name, employee_id, tempPassword).catch(err => {
+      console.error('Error sending activation email in background:', err);
+    });
 
     newEmployee.password_hash = undefined;
 

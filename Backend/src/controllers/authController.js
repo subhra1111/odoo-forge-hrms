@@ -66,7 +66,7 @@ const signupOrg = async (req, res) => {
       password_hash: password, // Pre-save hooks will encrypt this
       role: 'Admin',
       isActivated: true,
-      isVerified: false,
+      isVerified: process.env.AUTO_VERIFY === 'true' || false,
       verificationToken,
       verificationTokenExpires
     });
@@ -86,8 +86,10 @@ const signupOrg = async (req, res) => {
       break_time_hours: 1
     });
 
-    // Send verification email
-    await sendVerificationEmail(email, name, verificationToken);
+    // Send verification email (non-blocking background task)
+    sendVerificationEmail(email, name, verificationToken).catch(err => {
+      console.error('Error sending verification email in background:', err);
+    });
 
     // Generate token
     const token = signToken(adminUser._id);
@@ -136,7 +138,7 @@ const signupEmployee = async (req, res) => {
     // Update password (pre-save hashes it) and status
     employee.password_hash = password;
     employee.isActivated = true;
-    employee.isVerified = false;
+    employee.isVerified = process.env.AUTO_VERIFY === 'true' || false;
 
     // Generate Verification Token
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -145,8 +147,10 @@ const signupEmployee = async (req, res) => {
 
     await employee.save();
 
-    // Trigger verification email
-    await sendVerificationEmail(email, employee.name, verificationToken);
+    // Trigger verification email (non-blocking background task)
+    sendVerificationEmail(email, employee.name, verificationToken).catch(err => {
+      console.error('Error sending verification email in background:', err);
+    });
 
     return res.status(200).json({
       success: true,

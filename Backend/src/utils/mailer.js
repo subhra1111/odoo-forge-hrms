@@ -67,8 +67,9 @@ const sendVerificationEmail = async (email, name, token) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const verifyUrl = `${frontendUrl}/verify-email?token=${token}`;
 
+  const senderEmail = process.env.GMAIL_USER || process.env.SMTP_USER || 'no-reply@hrms.com';
   const mailOptions = {
-    from: '"HRMS Portal" <no-reply@hrms.com>',
+    from: `"HRMS Portal" <${senderEmail}>`,
     to: email,
     subject: 'Verify Your Email - HRMS Portal',
     text: `Hello ${name},\n\nPlease verify your email by clicking the link below:\n${verifyUrl}\n\nThank you!`,
@@ -97,8 +98,9 @@ const sendVerificationEmail = async (email, name, token) => {
 const sendActivationEmail = async (email, name, employeeId, tempPassword) => {
   const mailTransporter = await getTransporter();
 
+  const senderEmail = process.env.GMAIL_USER || process.env.SMTP_USER || 'no-reply@hrms.com';
   const mailOptions = {
-    from: '"HRMS Portal" <no-reply@hrms.com>',
+    from: `"HRMS Portal" <${senderEmail}>`,
     to: email,
     subject: 'Welcome to the Team! Activate Your HRMS Account',
     text: `Hello ${name},\n\nYou have been registered on the HRMS portal.\nYour Employee ID is: ${employeeId}\nYour Temporary Password is: ${tempPassword}\n\nPlease log in and activate your account using these credentials.\n\nThank you!`,
