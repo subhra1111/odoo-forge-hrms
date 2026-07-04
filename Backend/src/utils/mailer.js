@@ -8,11 +8,14 @@ const getTransporter = async () => {
   // Use configured Gmail if available
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
-      }
+      },
+      family: 4 // Force IPv4 to prevent ENETUNREACH IPv6 routing errors on Render
     });
     return transporter;
   }
@@ -26,7 +29,8 @@ const getTransporter = async () => {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      family: 4 // Force IPv4 to prevent ENETUNREACH IPv6 routing errors on Render
     });
     return transporter;
   }
