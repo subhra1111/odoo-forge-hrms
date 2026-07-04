@@ -6,6 +6,14 @@ const SalarySettings = require('../models/SalarySettings');
 const { generateEmployeeId } = require('../utils/idGenerator');
 const { sendActivationEmail } = require('../utils/mailer');
 
+const resolveEmployeeHelper = async (idParam, companyId) => {
+  const isObjectId = idParam.match(/^[0-9a-fA-F]{24}$/);
+  const query = isObjectId
+    ? { _id: idParam, company_id: companyId }
+    : { employee_id: idParam.toUpperCase(), company_id: companyId };
+  return await Employee.findOne(query);
+};
+
 /**
  * @desc    Onboard a new employee (Admin/HR only)
  * @route   POST /api/v1/employees
@@ -35,7 +43,7 @@ const onboardEmployee = async (req, res) => {
     const randPart = crypto.randomBytes(3).toString('hex'); // 6 chars
     const tempPassword = `Tmp${randPart}!`; // e.g. Tmp3a4b5c! -> starts with T (upper), contains mp (lower), numbers, special char !
 
-    // Create Employee in "pending activation" state (isActivated: false)
+    // Create Employee as active and verified by default
     const newEmployee = await Employee.create({
       employee_id,
       name,
@@ -47,8 +55,8 @@ const onboardEmployee = async (req, res) => {
       location,
       role: role || 'Employee',
       password_hash: tempPassword, // Mongoose pre-save hook will encrypt this hash
-      isActivated: false,
-      isVerified: false,
+      isActivated: true,
+      isVerified: true,
       status: 'Absent'
     });
 
@@ -172,16 +180,12 @@ const updateEmployeeProfile = async (req, res) => {
     const currentUserRole = req.user.role;
 
     // Check authorization: Employee can only update self, Admin/HR can update anyone in their company
-    const employee = await Employee.findById(employeeId);
+    const employee = await resolveEmployeeHelper(employeeId, req.user.company_id);
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee profile not found' });
     }
 
-    if (employee.company_id.toString() !== req.user.company_id.toString()) {
-      return res.status(403).json({ success: false, error: 'Access denied: Out of organization scope' });
-    }
-
-    const isSelfUpdate = (currentUserId === employeeId);
+    const isSelfUpdate = (currentUserId === employee._id.toString());
     const isAdminOrHR = ['Admin', 'HR'].includes(currentUserRole);
 
     if (!isSelfUpdate && !isAdminOrHR) {
@@ -264,10 +268,7 @@ const addSkill = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Skill name is required' });
     }
 
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      company_id: req.user.company_id
-    });
+    const employee = await resolveEmployeeHelper(req.params.id, req.user.company_id);
 
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee not found' });
@@ -310,10 +311,7 @@ const addSkill = async (req, res) => {
 const deleteSkill = async (req, res) => {
   try {
     const { skillName } = req.params;
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      company_id: req.user.company_id
-    });
+    const employee = await resolveEmployeeHelper(req.params.id, req.user.company_id);
 
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee not found' });
@@ -354,10 +352,7 @@ const addCertification = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Certification name is required' });
     }
 
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      company_id: req.user.company_id
-    });
+    const employee = await resolveEmployeeHelper(req.params.id, req.user.company_id);
 
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee not found' });
@@ -399,10 +394,7 @@ const addCertification = async (req, res) => {
 const deleteCertification = async (req, res) => {
   try {
     const { certName } = req.params;
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      company_id: req.user.company_id
-    });
+    const employee = await resolveEmployeeHelper(req.params.id, req.user.company_id);
 
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee not found' });

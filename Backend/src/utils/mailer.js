@@ -5,6 +5,18 @@ let transporter = null;
 const getTransporter = async () => {
   if (transporter) return transporter;
 
+  // Use configured Gmail if available
+  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+    return transporter;
+  }
+
   // Use configured SMTP host if available
   if (process.env.SMTP_HOST && process.env.SMTP_USER) {
     transporter = nodemailer.createTransport({
@@ -52,8 +64,8 @@ const getTransporter = async () => {
 
 const sendVerificationEmail = async (email, name, token) => {
   const mailTransporter = await getTransporter();
-  const appUrl = process.env.APP_URL || 'http://localhost:5000';
-  const verifyUrl = `${appUrl}/api/v1/auth/verify/${token}`;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyUrl = `${frontendUrl}/verify-email?token=${token}`;
 
   const mailOptions = {
     from: '"HRMS Portal" <no-reply@hrms.com>',

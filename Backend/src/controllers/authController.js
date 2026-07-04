@@ -120,7 +120,11 @@ const signupEmployee = async (req, res) => {
     const { employee_id, email, password, role } = req.body;
 
     // Find the pending onboarding profile
-    const employee = await Employee.findOne({ employee_id, email, role });
+    const employee = await Employee.findOne({
+      employee_id: employee_id.trim().toUpperCase(),
+      email: email.trim().toLowerCase(),
+      role
+    });
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Onboarding profile not found with matching ID, Email, and Role' });
     }
@@ -181,6 +185,10 @@ const signin = async (req, res) => {
 
     if (!employee.isActivated) {
       return res.status(403).json({ success: false, error: 'Account is not activated yet. Please complete registration.' });
+    }
+
+    if (!employee.isVerified) {
+      return res.status(403).json({ success: false, error: 'Email is not verified yet. Please check your email for the verification link.' });
     }
 
     // Check password matches

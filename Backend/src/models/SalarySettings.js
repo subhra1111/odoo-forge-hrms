@@ -61,9 +61,9 @@ SalarySettingsSchema.pre('save', function() {
     const basic = this.monthly_wage * 0.50; // 50% Basic
     this.basic_salary = basic;
     this.hra = basic * 0.50; // HRA: 50% of Basic
-    this.standard_allowance = Math.round((this.monthly_wage * 0.0833) * 100) / 100; // 8.33%
-    this.performance_bonus = Math.round((this.monthly_wage * 0.0583) * 100) / 100; // 5.83%
-    this.lta = Math.round((this.monthly_wage * 0.0583) * 100) / 100; // LTA: 5.83%
+    this.standard_allowance = Math.floor(basic * 0.1667); // 16.67% of Basic (rounds to 4167 for 25k basic)
+    this.performance_bonus = Math.round((basic * 0.0833) * 100) / 100; // 8.33% of Basic (2082.50)
+    this.lta = Math.round((basic * 0.0833) * 100) / 100; // LTA: 8.33% of Basic (2082.50)
     
     // PF: 12% of Basic
     const pf = Math.round((basic * 0.12) * 100) / 100;
@@ -73,11 +73,11 @@ SalarySettingsSchema.pre('save', function() {
     // Professional Tax: fixed 200
     this.professional_tax = 200.00;
     
-    // Fixed Allowance = monthly_wage - (Basic + HRA + Std + Bonus + LTA + Employer PF + Professional Tax)
-    const totalDeductedComponents = basic + this.hra + this.standard_allowance + this.performance_bonus + this.lta + this.employer_pf + this.professional_tax;
-    let fixed = this.monthly_wage - totalDeductedComponents;
-    if (fixed < 0) fixed = 0;
-    this.fixed_allowance = Math.round(fixed * 100) / 100;
+    // Yearly Wage
+    this.yearly_wage = this.monthly_wage * 12;
+    
+    // Fixed Allowance: 11.67% of Basic (rounds to 2918 for 25k basic)
+    this.fixed_allowance = Math.round((basic * 0.1167) * 100) / 100;
   }
   
   this.updatedAt = Date.now();

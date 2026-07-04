@@ -493,51 +493,86 @@ export default function ProfilePage() {
              ) : (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-in fade-in duration-200">
                  <div>
-                    <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Wages Breakdown</h3>
+                    <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Salary Components</h3>
                     <div className="space-y-4 text-sm bg-gray-50/50 p-6 rounded-xl border border-gray-100">
                       <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                         <span className="text-gray-600 font-medium">Basic Salary</span>
-                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.breakdown?.basic_salary || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                         <div>
+                           <span className="text-gray-600 font-medium block">Basic Salary</span>
+                           <span className="text-[10px] text-gray-400">50.00% of monthly wage</span>
+                         </div>
+                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.basic_salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                         <span className="text-gray-600 font-medium">House Rent Allowance (HRA)</span>
-                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.breakdown?.house_rent_allowance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                         <div>
+                           <span className="text-gray-600 font-medium block">House Rent Allowance (HRA)</span>
+                           <span className="text-[10px] text-gray-400">50.00% of Basic Salary</span>
+                         </div>
+                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.hra || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                         <span className="text-gray-600 font-medium">Medical Allowance</span>
-                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.breakdown?.medical_allowance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                         <div>
+                           <span className="text-gray-600 font-medium block">Standard Allowance</span>
+                           <span className="text-[10px] text-gray-400">16.67% of Basic Salary</span>
+                         </div>
+                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.standard_allowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                         <span className="text-gray-600 font-medium">Special Allowance</span>
-                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.breakdown?.special_allowance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                         <div>
+                           <span className="text-gray-600 font-medium block">Performance Bonus</span>
+                           <span className="text-[10px] text-gray-400">8.33% of Basic Salary</span>
+                         </div>
+                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.performance_bonus || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                         <div>
+                           <span className="text-gray-600 font-medium block">Leave Travel Allowance (LTA)</span>
+                           <span className="text-[10px] text-gray-400">8.33% of Basic Salary</span>
+                         </div>
+                         <span className="text-gray-900 font-semibold">₹{(salaryDetails.lta || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center pt-1 font-bold text-pink-600">
-                         <span>Net Salary (Estimated)</span>
-                         <span>₹{(salaryDetails.breakdown?.net_salary || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                         <div>
+                           <span className="block">Fixed Allowance</span>
+                           <span className="text-[10px] text-pink-400 font-normal">11.67% of Basic Salary</span>
+                         </div>
+                         <span>₹{(salaryDetails.fixed_allowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                  </div>
 
-                 <div>
-                    <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Contributions & Deductions</h3>
-                    
-                    <div className="space-y-6">
-                      <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 space-y-4 text-sm">
-                        <h4 className="font-semibold text-gray-700 mb-2">Provident Fund (PF)</h4>
-                        <div className="flex justify-between items-center">
-                           <span className="text-gray-600 font-medium">PF Contribution (Deducted)</span>
-                           <span className="text-red-500 font-semibold">-₹{(salaryDetails.breakdown?.provident_fund || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100 space-y-4 text-sm">
-                        <h4 className="font-semibold text-gray-700 mb-2">Taxes</h4>
-                        <div className="flex justify-between items-center">
-                           <span className="text-gray-600 font-medium">Income Tax Deduction</span>
-                           <span className="text-red-500 font-semibold">-₹{(salaryDetails.breakdown?.tax || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                      </div>
-                    </div>
+                 <div className="space-y-6">
+                   <div>
+                     <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Provident Fund (PF) Contribution</h3>
+                     <div className="space-y-4 text-sm bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                       <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                          <div>
+                            <span className="text-gray-600 font-medium block">Employee's PF</span>
+                            <span className="text-[10px] text-gray-400">12.00% of Basic Salary</span>
+                          </div>
+                          <span className="text-red-500 font-semibold">-₹{(salaryDetails.employee_pf || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-gray-600 font-medium block">Employer's PF</span>
+                            <span className="text-[10px] text-gray-400">12.00% of Basic Salary</span>
+                          </div>
+                          <span className="text-gray-900 font-semibold">₹{(salaryDetails.employer_pf || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                       </div>
+                     </div>
+                   </div>
+                   
+                   <div>
+                     <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Tax Deductions</h3>
+                     <div className="space-y-4 text-sm bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+                       <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-gray-600 font-medium block">Professional Tax</span>
+                            <span className="text-[10px] text-gray-400">Fixed deduction per month</span>
+                          </div>
+                          <span className="text-red-500 font-semibold">-₹{(salaryDetails.professional_tax || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                       </div>
+                     </div>
+                   </div>
                  </div>
                </div>
              )}

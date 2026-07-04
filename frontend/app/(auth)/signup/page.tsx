@@ -41,7 +41,7 @@ export default function SignupPage() {
 
       const res = await signupOrg(data);
       if (res.data && res.data.success) {
-        alert(`Company Registered successfully!\nYour generated Admin ID is: ${res.data.data.employee.employee_id}\n\nPlease check your email (or backend terminal Ethereal logs) for the verification link before logging in.`);
+        alert(`Company Registered successfully!\nYour generated Admin ID is: ${res.data.data.employee.employee_id}\n\nPlease check your email for the verification link before logging in.`);
         router.push('/login');
       } else {
         alert(res.data?.error || 'Registration failed.');
@@ -82,38 +82,38 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Company Name -</label>
-              <input type="text" name="companyName" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
             
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Name -</label>
-              <input type="text" name="name" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Email -</label>
-              <input type="email" name="email" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Phone -</label>
-              <input type="tel" name="phone" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Password -</label>
-              <input type="password" name="password" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center">
               <label className="text-sm font-medium text-gray-700 w-36 shrink-0 mb-1 md:mb-0">Confirm Password -</label>
-              <input type="password" name="confirmPassword" onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
+              <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all" required />
             </div>
 
             <div className="pt-6 md:ml-36">
               <button
                 type="submit"
-                className="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 rounded-lg transition-all shadow-sm"
+                className="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 rounded-lg transition-all shadow-sm font-semibold"
               >
                 Sign Up
               </button>
