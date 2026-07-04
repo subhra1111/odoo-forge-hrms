@@ -169,7 +169,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
                       <img 
-                        src={emp.profilePicture ? (emp.profilePicture.startsWith('data:') ? emp.profilePicture : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${emp.profilePicture}`) : `/default_avatar.png`} 
+                        src={emp.profilePicture && emp.profilePicture.startsWith('data:') ? emp.profilePicture : `/default_avatar.png`} 
                         alt={emp.name}
                         className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
                       />

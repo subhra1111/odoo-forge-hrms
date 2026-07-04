@@ -186,8 +186,8 @@ export default function ProfilePage() {
       const res = await updateProfile(employeeId, formData);
       if (res.data && res.data.success) {
         alert('Profile picture updated successfully!');
-        const newAvatarPath = res.data.data.profilePicture 
-          ? (res.data.data.profilePicture.startsWith('data:') ? res.data.data.profilePicture : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${res.data.data.profilePicture}`) 
+        const newAvatarPath = res.data.data.profilePicture && res.data.data.profilePicture.startsWith('data:')
+          ? res.data.data.profilePicture
           : undefined;
         if (isSelf && newAvatarPath) {
           updateUser({ avatar: newAvatarPath });
@@ -309,8 +309,8 @@ export default function ProfilePage() {
   if (isSelf) tabs.push('Security');
   if (isAdmin || isSelf) tabs.push('Salary Info');
 
-  const avatarUrl = employee.profilePicture 
-    ? (employee.profilePicture.startsWith('data:') ? employee.profilePicture : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${employee.profilePicture}`) 
+  const avatarUrl = employee.profilePicture && employee.profilePicture.startsWith('data:')
+    ? employee.profilePicture
     : `/default_avatar.png`;
 
   return (

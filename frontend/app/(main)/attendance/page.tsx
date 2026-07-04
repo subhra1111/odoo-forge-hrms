@@ -177,7 +177,7 @@ export default function AttendancePage() {
                 {filteredRecords.map((rec) => {
                   const emp = rec.employee_id;
                   const name = emp?.name || 'Onboarded Employee';
-                  const avatar = emp?.profilePicture ? (emp.profilePicture.startsWith('data:') ? emp.profilePicture : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${emp.profilePicture}`) : `/default_avatar.png`;
+                  const avatar = emp?.profilePicture && emp.profilePicture.startsWith('data:') ? emp.profilePicture : `/default_avatar.png`;
                   return (
                     <tr key={rec._id} className="hover:bg-gray-50/80 transition-colors text-gray-700">
                       <td className="px-6 py-4">
