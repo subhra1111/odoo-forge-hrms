@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Users, Calendar, Clock, DollarSign, User, LogOut, Activity, Search } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { checkIn, checkOut, getMyAttendance } from '@/lib/api';
 import { useEffect, useState, useRef } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -15,14 +16,71 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isStatusPopupOpen, setIsStatusPopupOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const loadAttendanceStatus = async () => {
+    try {
+      const res = await getMyAttendance();
+      if (res.data && res.data.success) {
+        const logs = res.data.data || [];
+        if (logs.length > 0) {
+          const latest = logs[0];
+          const todayStr = new Date().toLocaleDateString('en-CA');
+          if (latest.date === todayStr && latest.check_in && !latest.check_out) {
+            setIsCheckedIn(true);
+          } else {
+            setIsCheckedIn(false);
+          }
+        } else {
+          setIsCheckedIn(false);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load check-in status:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAttendanceStatus();
+    }
+  }, [isAuthenticated]);
+
+  const handleCheckInOut = async () => {
+    try {
+      if (isCheckedIn) {
+        const res = await checkOut();
+        if (res.data && res.data.success) {
+          setIsCheckedIn(false);
+          alert('Checked out successfully!');
+          window.location.reload();
+        }
+      } else {
+        const res = await checkIn();
+        if (res.data && res.data.success) {
+          setIsCheckedIn(true);
+          alert('Checked in successfully!');
+          window.location.reload();
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to update attendance status.');
+    }
+  };
+
   const statusPopupRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
   useEffect(() => {
-    if (!isAuthenticated) {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isAuthenticated) return null;
+  if (!isHydrated || !isAuthenticated) return null;
 
   const handleLogout = () => {
     logout();
@@ -57,9 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center space-x-12">
           {/* Company Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-pink-600 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xl">O</span>
-            </div>
+            <img src="/logo.png" alt="HRMS Logo" className="w-8 h-8 object-contain" />
             <span className="text-xl font-bold text-gray-800">HRMS</span>
           </Link>
           
@@ -107,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {isCheckedIn && <p className="text-xs text-gray-400 mt-1">Since 09:00 AM</p>}
                 </div>
                 <button 
-                  onClick={() => setIsCheckedIn(!isCheckedIn)}
+                  onClick={handleCheckInOut}
                   className={`w-full py-2 rounded-md text-sm font-medium transition-colors ${isCheckedIn ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
                 >
                   {isCheckedIn ? 'Check Out →' : 'Check In →'}

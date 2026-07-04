@@ -103,6 +103,74 @@ export default function ProfilePage() {
     }
   };
 
+  // Edit Profile Modal States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    mobile: '',
+    location: '',
+    department: '',
+    role: '',
+    about: '',
+    what_i_love_about_my_job: '',
+    interests_and_hobbies: '',
+    date_of_birth: '',
+    nationality: '',
+    marital_status: '',
+    gender: ''
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      name: employee?.name || '',
+      mobile: employee?.mobile || '',
+      location: employee?.location || '',
+      department: employee?.department || '',
+      role: employee?.role || '',
+      about: employee?.resume?.about || '',
+      what_i_love_about_my_job: employee?.resume?.what_i_love_about_my_job || '',
+      interests_and_hobbies: employee?.resume?.interests_and_hobbies || '',
+      date_of_birth: employee?.date_of_birth ? dayjs(employee?.date_of_birth).format('YYYY-MM-DD') : '',
+      nationality: employee?.nationality || '',
+      marital_status: employee?.marital_status || '',
+      gender: employee?.gender || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append('name', editForm.name);
+      formData.append('mobile', editForm.mobile);
+      formData.append('location', editForm.location);
+      formData.append('department', editForm.department);
+      formData.append('role', editForm.role);
+      formData.append('about', editForm.about);
+      formData.append('what_i_love_about_my_job', editForm.what_i_love_about_my_job);
+      formData.append('interests_and_hobbies', editForm.interests_and_hobbies);
+      formData.append('date_of_birth', editForm.date_of_birth);
+      formData.append('nationality', editForm.nationality);
+      formData.append('marital_status', editForm.marital_status);
+      formData.append('gender', editForm.gender);
+
+      const res = await updateProfile(employeeId, formData);
+      if (res.data && res.data.success) {
+        alert('Profile updated successfully!');
+        setIsEditModalOpen(false);
+        loadProfile();
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to update profile.');
+    }
+  };
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!employeeId || !e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
@@ -225,7 +293,7 @@ export default function ProfilePage() {
 
   const tabs = ['Resume', 'Private Info'];
   if (isSelf) tabs.push('Security');
-  if (isAdmin) tabs.push('Salary Info');
+  if (isAdmin || isSelf) tabs.push('Salary Info');
 
   const avatarUrl = employee.profilePicture 
     ? `http://localhost:5000${employee.profilePicture}` 
@@ -253,7 +321,17 @@ export default function ProfilePage() {
           
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
             <div>
-               <h1 className="text-3xl font-bold text-gray-900">{employee.name}</h1>
+               <div className="flex items-center space-x-4">
+                 <h1 className="text-3xl font-bold text-gray-900">{employee.name}</h1>
+                 {(isAdmin || isSelf) && (
+                   <button 
+                     onClick={openEditModal}
+                     className="text-xs font-semibold text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-lg border border-pink-200 transition-colors shadow-sm font-['Outfit']"
+                   >
+                     Edit Profile
+                   </button>
+                 )}
+               </div>
                <div className="mt-6 grid grid-cols-2 gap-y-3 text-sm">
                  <div className="text-gray-500 font-medium">Login ID</div>
                  <div className="text-gray-800 font-semibold">{employee.employee_id}</div>
@@ -282,6 +360,185 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 font-['Outfit'] border-b pb-4">Edit Profile Info</h2>
+            <form onSubmit={handleSaveProfile} className="space-y-6 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleEditFormChange}
+                    disabled={!isAdmin}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                  {!isAdmin && <span className="text-[10px] text-gray-400">Can only be modified by HR/Admin</span>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone / Mobile</label>
+                  <input
+                    type="text"
+                    name="mobile"
+                    value={editForm.mobile}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Address / Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={editForm.location}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={editForm.department}
+                    onChange={handleEditFormChange}
+                    disabled={!isAdmin}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                  {!isAdmin && <span className="text-[10px] text-gray-400">Can only be modified by HR/Admin</span>}
+                </div>
+
+                {isAdmin && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Role Privilege</label>
+                    <select
+                      name="role"
+                      value={editForm.role}
+                      onChange={handleEditFormChange}
+                      className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                    >
+                      <option value="Employee">Employee</option>
+                      <option value="HR">HR</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="date_of_birth"
+                    value={editForm.date_of_birth}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nationality</label>
+                  <input
+                    type="text"
+                    name="nationality"
+                    value={editForm.nationality}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Gender</label>
+                  <select
+                    name="gender"
+                    value={editForm.gender}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Marital Status</label>
+                  <select
+                    name="marital_status"
+                    value={editForm.marital_status}
+                    onChange={handleEditFormChange}
+                    className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                  >
+                    <option value="">Select Marital Status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">About Me</label>
+                <textarea
+                  name="about"
+                  value={editForm.about}
+                  onChange={handleEditFormChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">What I Love About My Job</label>
+                <textarea
+                  name="what_i_love_about_my_job"
+                  value={editForm.what_i_love_about_my_job}
+                  onChange={handleEditFormChange}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Interests and Hobbies</label>
+                <input
+                  type="text"
+                  name="interests_and_hobbies"
+                  value={editForm.interests_and_hobbies}
+                  onChange={handleEditFormChange}
+                  placeholder="e.g. Photography, Coding, Reading"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-pink-600 hover:bg-pink-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Navigation */}
       <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto hide-scrollbar">
@@ -313,13 +570,13 @@ export default function ProfilePage() {
                    <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4 flex justify-between items-center">
                      What I love about my job
                    </h3>
-                   <p className="text-sm text-gray-600 leading-relaxed">Solving complex problems, writing clean code, and working in cross-functional squads.</p>
+                   <p className="text-sm text-gray-600 leading-relaxed">{employee.resume?.what_i_love_about_my_job || 'No information provided.'}</p>
                 </div>
                 <div>
                    <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4 flex justify-between items-center">
                      My interests and hobbies
                    </h3>
-                   <p className="text-sm text-gray-600 leading-relaxed">{employee.resume?.hobbies?.join(', ') || 'No hobbies added.'}</p>
+                   <p className="text-sm text-gray-600 leading-relaxed">{employee.resume?.interests_and_hobbies || 'No interests and hobbies added.'}</p>
                 </div>
              </div>
              <div className="space-y-8">
@@ -385,12 +642,12 @@ export default function ProfilePage() {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-sm">
              <div className="space-y-4">
                 <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mb-6">Personal Details</h3>
-                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Date of Birth</span><span className="text-gray-900 font-semibold">1990-01-01</span></div>
+                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Date of Birth</span><span className="text-gray-900 font-semibold">{employee.date_of_birth ? dayjs(employee.date_of_birth).format('YYYY-MM-DD') : 'N/A'}</span></div>
                 <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Present Address</span><span className="text-gray-900 font-semibold">{employee.location || 'HQ'}</span></div>
-                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Nationality</span><span className="text-gray-900 font-semibold">Indian</span></div>
+                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Nationality</span><span className="text-gray-900 font-semibold">{employee.nationality || 'N/A'}</span></div>
                 <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Personal Email</span><span className="text-gray-900 font-semibold">{employee.email}</span></div>
-                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Gender</span><span className="text-gray-900 font-semibold">Male</span></div>
-                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Marital Status</span><span className="text-gray-900 font-semibold">Single</span></div>
+                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Gender</span><span className="text-gray-900 font-semibold">{employee.gender || 'N/A'}</span></div>
+                <div className="grid grid-cols-2 items-center py-2 border-b border-gray-50"><span className="text-gray-500 font-medium">Marital Status</span><span className="text-gray-900 font-semibold">{employee.marital_status || 'N/A'}</span></div>
                 <div className="grid grid-cols-2 items-center py-2"><span className="text-gray-500 font-medium">Account Status</span><span className="text-gray-900 font-semibold">{employee.isVerified ? 'Verified' : 'Pending Verification'}</span></div>
              </div>
              <div className="space-y-4">
@@ -453,8 +710,8 @@ export default function ProfilePage() {
            </div>
         )}
 
-        {/* Salary Info Tab (Admin Only) */}
-        {activeTab === 'Salary Info' && isAdmin && (
+        {/* Salary Info Tab */}
+        {activeTab === 'Salary Info' && (isAdmin || isSelf) && (
            <div>
              <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-200 pb-6 mb-8">
                 <div>
@@ -469,12 +726,13 @@ export default function ProfilePage() {
                        <input 
                          type="number" 
                          value={monthlyWage} 
+                         disabled={!isAdmin}
                          onChange={(e) => {
                            const w = Number(e.target.value) || 0;
                            setMonthlyWage(w);
                            handleUpdateSalary(w);
                          }}
-                         className="w-24 bg-transparent border-b border-gray-300 focus:border-pink-500 focus:outline-none text-center font-bold"
+                         className="w-24 bg-transparent border-b border-gray-300 focus:border-pink-500 focus:outline-none text-center font-bold disabled:border-transparent disabled:text-gray-800"
                        />
                      </div>
                    </div>

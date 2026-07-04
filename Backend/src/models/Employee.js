@@ -78,6 +78,25 @@ const EmployeeSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  date_of_birth: {
+    type: Date,
+    default: null
+  },
+  nationality: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  marital_status: {
+    type: String,
+    enum: ['Single', 'Married', 'Divorced', 'Widowed', ''],
+    default: ''
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', ''],
+    default: ''
+  },
   resume: {
     about: { type: String, default: '' },
     what_i_love_about_my_job: { type: String, default: '' },

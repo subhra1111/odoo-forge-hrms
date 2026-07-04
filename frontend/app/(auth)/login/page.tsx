@@ -45,10 +45,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] text-gray-800 font-['Outfit']">
       <div className="w-full max-w-md p-10 space-y-8 bg-white rounded-2xl border border-gray-100 shadow-xl">
         <div className="flex flex-col items-center justify-center mb-8 space-y-4">
-           {/* Logo placeholder */}
-           <div className="w-12 h-12 bg-pink-600 rounded-lg flex items-center justify-center shadow-md">
-             <span className="text-white font-bold text-2xl">O</span>
-           </div>
+            {/* Logo placeholder */}
+            <img src="/logo.png" alt="HRMS Logo" className="w-14 h-14 object-contain mb-2" />
            <h2 className="text-2xl font-bold text-gray-900">Sign in to HRMS</h2>
            <p className="text-sm text-gray-500">Enter your details below to continue.</p>
         </div>

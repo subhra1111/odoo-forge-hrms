@@ -21,7 +21,35 @@ const resolveEmployeeHelper = async (idParam, companyId) => {
  */
 const onboardEmployee = async (req, res) => {
   try {
-    const { name, email, mobile, department, manager_id, location, role } = req.body;
+    const {
+      name,
+      email,
+      mobile,
+      department,
+      manager_id,
+      location,
+      role,
+      date_of_birth,
+      nationality,
+      marital_status,
+      gender,
+      monthly_wage
+    } = req.body;
+
+    // HR cannot create admin
+    if (req.user.role === 'HR' && role === 'Admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'HR users are not authorized to onboard Admin accounts.'
+      });
+    }
+
+    if (!name || !email || !department || !mobile || !location || !date_of_birth || !nationality || !marital_status || !gender || monthly_wage === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill in all fields (including Private Info: Date of Birth, Nationality, Marital Status, Gender, Mobile, Location, and initial Monthly Wage).'
+      });
+    }
 
     // Check if email already exists
     const existingEmp = await Employee.findOne({ email: email.toLowerCase() });
@@ -57,7 +85,11 @@ const onboardEmployee = async (req, res) => {
       password_hash: tempPassword, // Mongoose pre-save hook will encrypt this hash
       isActivated: true,
       isVerified: true,
-      status: 'Absent'
+      status: 'Absent',
+      date_of_birth,
+      nationality,
+      marital_status,
+      gender
     });
 
     // Initialize Time Off Allocations
@@ -67,10 +99,10 @@ const onboardEmployee = async (req, res) => {
       sick_time_off_available: 7
     });
 
-    // Initialize default Salary settings (Monthly wage: 30000)
+    // Initialize default Salary settings with provided initial wage
     await SalarySettings.create({
       employee_id: newEmployee._id,
-      monthly_wage: 30000,
+      monthly_wage: Number(monthly_wage),
       working_days_per_week: 5,
       break_time_hours: 1
     });
@@ -99,6 +131,15 @@ const onboardEmployee = async (req, res) => {
 const getEmployees = async (req, res) => {
   try {
     const { search, status, department, role } = req.query;
+
+    // Sync database status for all employees in this company first
+    try {
+      const { updateEmployeeDatabaseStatus } = require('./timeOffController');
+      const employeesToSync = await Employee.find({ company_id: req.user.company_id });
+      await Promise.all(employeesToSync.map(emp => updateEmployeeDatabaseStatus(emp._id)));
+    } catch (syncErr) {
+      console.error('Error in bulk status sync:', syncErr);
+    }
     
     // Construct query scoped to the user's company
     const query = { company_id: req.user.company_id };
@@ -123,14 +164,28 @@ const getEmployees = async (req, res) => {
       ];
     }
 
-    const employees = await Employee.find(query)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 8;
+    const startIndex = (page - 1) * limit;
+
+    const total = await Employee.countDocuments(query);
+
+    const paginatedEmployees = await Employee.find(query)
       .select('-password_hash -verificationToken -verificationTokenExpires')
-      .populate('manager_id', 'name employee_id email');
+      .populate('manager_id', 'name employee_id email')
+      .skip(startIndex)
+      .limit(limit);
 
     return res.status(200).json({
       success: true,
-      count: employees.length,
-      data: employees
+      count: paginatedEmployees.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      data: paginatedEmployees
     });
   } catch (error) {
     console.error('Get Employees Error:', error);
@@ -150,17 +205,28 @@ const getEmployeeById = async (req, res) => {
       ? { _id: req.params.id, company_id: req.user.company_id }
       : { employee_id: req.params.id.toUpperCase(), company_id: req.user.company_id };
 
-    const employee = await Employee.findOne(query)
-      .select('-password_hash -verificationToken -verificationTokenExpires')
-      .populate('manager_id', 'name employee_id email');
+    const employee = await Employee.findOne(query);
 
     if (!employee) {
       return res.status(404).json({ success: false, error: 'Employee not found' });
     }
 
+    // Sync status for this employee
+    try {
+      const { updateEmployeeDatabaseStatus } = require('./timeOffController');
+      await updateEmployeeDatabaseStatus(employee._id);
+    } catch (syncErr) {
+      console.error('Error in single status sync:', syncErr);
+    }
+
+    // Refetch the employee with the updated status
+    const updatedEmployee = await Employee.findOne(query)
+      .select('-password_hash -verificationToken -verificationTokenExpires')
+      .populate('manager_id', 'name employee_id email');
+
     return res.status(200).json({
       success: true,
-      data: employee
+      data: updatedEmployee
     });
   } catch (error) {
     console.error('Get Employee ID Error:', error);
@@ -208,13 +274,21 @@ const updateEmployeeProfile = async (req, res) => {
       status,
       about,
       what_i_love_about_my_job,
-      interests_and_hobbies
+      interests_and_hobbies,
+      date_of_birth,
+      nationality,
+      marital_status,
+      gender
     } = req.body;
 
     // 1. Apply Employee Self-Editable fields
     if (isSelfUpdate) {
       if (mobile) employee.mobile = mobile;
       if (location) employee.location = location;
+      if (date_of_birth !== undefined) employee.date_of_birth = date_of_birth || null;
+      if (nationality !== undefined) employee.nationality = nationality;
+      if (marital_status !== undefined) employee.marital_status = marital_status;
+      if (gender !== undefined) employee.gender = gender;
       
       // Update Resume Info subdocument
       if (about !== undefined) employee.resume.about = about;
@@ -227,6 +301,10 @@ const updateEmployeeProfile = async (req, res) => {
       if (name) employee.name = name;
       if (mobile && !isSelfUpdate) employee.mobile = mobile;
       if (location && !isSelfUpdate) employee.location = location;
+      if (date_of_birth !== undefined && !isSelfUpdate) employee.date_of_birth = date_of_birth || null;
+      if (nationality !== undefined && !isSelfUpdate) employee.nationality = nationality;
+      if (marital_status !== undefined && !isSelfUpdate) employee.marital_status = marital_status;
+      if (gender !== undefined && !isSelfUpdate) employee.gender = gender;
       if (department) employee.department = department;
       if (role && currentUserRole === 'Admin') employee.role = role; // Only superadmin edits role
       if (status) employee.status = status;

@@ -14,19 +14,31 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Form states for onboarding
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [newRole, setNewRole] = useState('Employee');
+  const [newMobile, setNewMobile] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newDateOfBirth, setNewDateOfBirth] = useState('');
+  const [newNationality, setNewNationality] = useState('');
+  const [newMaritalStatus, setNewMaritalStatus] = useState('');
+  const [newGender, setNewGender] = useState('');
+  const [newMonthlyWage, setNewMonthlyWage] = useState('30000');
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const res = await getEmployees({ search: searchQuery });
+      const res = await getEmployees({ search: searchQuery, page } as any);
       if (res.data && res.data.success) {
         setEmployees(res.data.data || []);
+        if (res.data.pagination) {
+          setTotalPages(res.data.pagination.totalPages || 1);
+        }
       }
     } catch (err) {
       console.error('Failed to load employee directory:', err);
@@ -36,12 +48,16 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchEmployees();
+    setPage(1);
   }, [searchQuery]);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, [searchQuery, page]);
+
   const handleOnboard = async () => {
-    if (!newName || !newEmail || !newDepartment) {
-      alert('Please fill in all fields.');
+    if (!newName || !newEmail || !newDepartment || !newMobile || !newLocation || !newDateOfBirth || !newNationality || !newMaritalStatus || !newGender || !newMonthlyWage) {
+      alert('Please fill in all fields (including Private Info and Initial Salary).');
       return;
     }
 
@@ -51,6 +67,13 @@ export default function DashboardPage() {
         email: newEmail,
         department: newDepartment,
         role: newRole,
+        mobile: newMobile,
+        location: newLocation,
+        date_of_birth: newDateOfBirth,
+        nationality: newNationality,
+        marital_status: newMaritalStatus,
+        gender: newGender,
+        monthly_wage: Number(newMonthlyWage)
       });
 
       if (res.data && res.data.success) {
@@ -61,6 +84,13 @@ export default function DashboardPage() {
         setNewEmail('');
         setNewDepartment('');
         setNewRole('Employee');
+        setNewMobile('');
+        setNewLocation('');
+        setNewDateOfBirth('');
+        setNewNationality('');
+        setNewMaritalStatus('');
+        setNewGender('');
+        setNewMonthlyWage('30000');
         // Refresh Directory
         fetchEmployees();
       }
@@ -74,7 +104,7 @@ export default function DashboardPage() {
     switch (status) {
       case 'Present': 
         return <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm" title="Present"></div>;
-      case 'Leave': 
+      case 'On Leave': 
         return <Plane className="w-4 h-4 text-blue-500 rotate-45" />;
       case 'Absent': 
       default:
@@ -120,95 +150,198 @@ export default function DashboardPage() {
       ) : employees.length === 0 ? (
         <div className="text-center py-12 text-gray-500 font-medium">No employees found.</div>
       ) : (
-        /* Employee Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {employees.map((emp) => (
-            <Link href={`/profile/${emp.employee_id}`} key={emp.employee_id} className="block group">
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 transition-all hover:border-pink-300 hover:shadow-lg relative overflow-hidden">
-                
-                {/* Status Icon */}
-                <div className="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100 group-hover:bg-white transition-colors">
-                  {getStatusIcon(emp.profileStatus || 'Absent')}
-                </div>
-                
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative">
-                    <img 
-                      src={emp.profilePicture ? `http://localhost:5000${emp.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=fce7f3&color=db2777`} 
-                      alt={emp.name}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
-                    />
+        <div className="space-y-8 animate-in fade-in duration-200">
+          {/* Employee Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {employees.map((emp) => (
+              <Link href={`/profile/${emp.employee_id}`} key={emp.employee_id} className="block group">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 transition-all hover:border-pink-300 hover:shadow-lg relative overflow-hidden">
+                  
+                  {/* Status Icon */}
+                  <div className="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100 group-hover:bg-white transition-colors">
+                    {getStatusIcon(emp.status || 'Absent')}
                   </div>
                   
-                  <div className="text-center">
-                    <h3 className="font-semibold text-gray-900 text-lg group-hover:text-pink-600 transition-colors">{emp.name}</h3>
-                    <p className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full inline-block mt-1 mb-2">
-                      {emp.role}
-                    </p>
-                    <p className="text-sm text-gray-600 font-medium">{emp.employee_id}</p>
-                    <p className="text-xs text-gray-400 mt-1">{emp.department || 'No Department'}</p>
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="relative">
+                      <img 
+                        src={emp.profilePicture ? `http://localhost:5000${emp.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=fce7f3&color=db2777`} 
+                        alt={emp.name}
+                        className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="text-center">
+                      <h3 className="font-semibold text-gray-900 text-lg group-hover:text-pink-600 transition-colors">{emp.name}</h3>
+                      <p className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full inline-block mt-1 mb-2">
+                        {emp.role}
+                      </p>
+                      <p className="text-sm text-gray-600 font-medium">{emp.employee_id}</p>
+                      <p className="text-xs text-gray-400 mt-1">{emp.department || 'No Department'}</p>
+                    </div>
                   </div>
+                  
                 </div>
-                
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-4 pt-4">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-sm font-['Outfit'] disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-sm font-medium text-gray-600 font-['Outfit']">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-sm font-['Outfit'] disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Add Employee Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden my-8">
             <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50/50">
-               <h3 className="text-lg font-bold text-gray-900">Add New Employee</h3>
+               <h3 className="text-lg font-bold text-gray-900 font-['Outfit']">Add New Employee</h3>
                <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                  <XCircle className="w-5 h-5" />
                </button>
             </div>
-            <div className="p-6 space-y-4 text-sm">
-               <div className="flex flex-col space-y-1.5">
-                  <label className="text-gray-700 font-medium">Name</label>
-                  <input 
-                    type="text" 
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
-                    placeholder="John Doe" 
-                  />
-               </div>
-               <div className="flex flex-col space-y-1.5">
-                  <label className="text-gray-700 font-medium">Email</label>
-                  <input 
-                    type="email" 
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
-                    placeholder="john@example.com" 
-                  />
-               </div>
-               <div className="flex flex-col space-y-1.5">
-                  <label className="text-gray-700 font-medium">Department</label>
-                  <input 
-                    type="text" 
-                    value={newDepartment}
-                    onChange={(e) => setNewDepartment(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
-                    placeholder="Engineering" 
-                  />
-               </div>
-               <div className="flex flex-col space-y-1.5">
-                  <label className="text-gray-700 font-medium">Role</label>
-                  <select 
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all"
-                  >
-                    <option value="Employee">Employee</option>
-                    <option value="Admin">Admin</option>
-                    <option value="HR">HR</option>
-                  </select>
-               </div>
+            <div className="p-6 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Name</label>
+                   <input 
+                     type="text" 
+                     value={newName}
+                     onChange={(e) => setNewName(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="John Doe" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Email</label>
+                   <input 
+                     type="email" 
+                     value={newEmail}
+                     onChange={(e) => setNewEmail(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="john@example.com" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Department</label>
+                   <input 
+                     type="text" 
+                     value={newDepartment}
+                     onChange={(e) => setNewDepartment(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="Engineering" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Role</label>
+                   <select 
+                     value={newRole}
+                     onChange={(e) => setNewRole(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold"
+                   >
+                     <option value="Employee">Employee</option>
+                     {user?.role === 'Admin' && <option value="Admin">Admin</option>}
+                     <option value="HR">HR</option>
+                   </select>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Phone / Mobile</label>
+                   <input 
+                     type="text" 
+                     value={newMobile}
+                     onChange={(e) => setNewMobile(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="+1234567890" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Present Address / Location</label>
+                   <input 
+                     type="text" 
+                     value={newLocation}
+                     onChange={(e) => setNewLocation(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="New York, USA" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Date of Birth</label>
+                   <input 
+                     type="date" 
+                     value={newDateOfBirth}
+                     onChange={(e) => setNewDateOfBirth(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Nationality</label>
+                   <input 
+                     type="text" 
+                     value={newNationality}
+                     onChange={(e) => setNewNationality(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="Indian" 
+                   />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Gender</label>
+                   <select 
+                     value={newGender}
+                     onChange={(e) => setNewGender(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold"
+                   >
+                     <option value="">Select Gender</option>
+                     <option value="Male">Male</option>
+                     <option value="Female">Female</option>
+                     <option value="Other">Other</option>
+                   </select>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                   <label className="text-gray-700 font-medium">Marital Status</label>
+                   <select 
+                     value={newMaritalStatus}
+                     onChange={(e) => setNewMaritalStatus(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold"
+                   >
+                     <option value="">Select Marital Status</option>
+                     <option value="Single">Single</option>
+                     <option value="Married">Married</option>
+                     <option value="Divorced">Divorced</option>
+                     <option value="Widowed">Widowed</option>
+                   </select>
+                </div>
+                <div className="flex flex-col space-y-1.5 md:col-span-2">
+                   <label className="text-gray-700 font-medium">Initial Monthly Wage (₹)</label>
+                   <input 
+                     type="number" 
+                     value={newMonthlyWage}
+                     onChange={(e) => setNewMonthlyWage(e.target.value)}
+                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all font-semibold" 
+                     placeholder="50000" 
+                   />
+                </div>
+              </div>
             </div>
             <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex justify-end space-x-3">
                <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors" onClick={() => setShowAddModal(false)}>Cancel</button>

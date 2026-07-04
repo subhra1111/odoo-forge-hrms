@@ -27,6 +27,12 @@ const calculateWorkingDays = (start, end) => {
   return count;
 };
 
+const getLocalDateString = (dateObj = new Date()) => {
+  const offset = dateObj.getTimezoneOffset();
+  const localDate = new Date(dateObj.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+};
+
 /**
  * Helper to update database status of an employee based on today's check-ins and approved leaves
  */
@@ -50,7 +56,7 @@ const updateEmployeeDatabaseStatus = async (employeeId) => {
 
     // 2. Check if checked in today
     const Attendance = require('../models/Attendance');
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const attendance = await Attendance.findOne({
       employee_id: employeeId,
       date: todayStr

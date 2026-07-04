@@ -42,7 +42,8 @@ const checkIn = async (req, res) => {
     });
 
     // Update Employee status to Present
-    await Employee.findByIdAndUpdate(employeeId, { status: 'Present' });
+    const { updateEmployeeDatabaseStatus } = require('./timeOffController');
+    await updateEmployeeDatabaseStatus(employeeId);
 
     return res.status(201).json({
       success: true,
@@ -111,8 +112,9 @@ const checkOut = async (req, res) => {
 
     await attendance.save();
 
-    // Update Employee status back to Absent
-    await Employee.findByIdAndUpdate(employeeId, { status: 'Absent' });
+    // Update Employee status back to Absent or On Leave
+    const { updateEmployeeDatabaseStatus } = require('./timeOffController');
+    await updateEmployeeDatabaseStatus(employeeId);
 
     return res.status(200).json({
       success: true,
