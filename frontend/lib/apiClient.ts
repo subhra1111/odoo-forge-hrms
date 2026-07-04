@@ -13,10 +13,23 @@ export const apiClient = axios.create({
 // Add interceptor to include auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // We will retrieve the token from local storage or Zustand store
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    let token = null;
+    if (typeof window !== 'undefined') {
+      token = localStorage.getItem('auth_token');
+      if (!token) {
+        try {
+          const storageStr = localStorage.getItem('auth-storage');
+          if (storageStr) {
+            const parsed = JSON.parse(storageStr);
+            token = parsed?.state?.token || null;
+          }
+        } catch (e) {
+          console.error('Failed to parse auth-storage:', e);
+        }
+      }
+    }
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
     return config;
   },

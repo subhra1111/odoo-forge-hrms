@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload } from 'lucide-react';
+import { signupOrg } from '@/lib/api';
 
 export default function SignupPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -16,15 +18,54 @@ export default function SignupPage() {
     password: '',
     confirmPassword: ''
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock Signup
-    router.push('/login');
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+
+    try {
+      const data = new FormData();
+      data.append('company_name', formData.companyName);
+      data.append('name', formData.name);
+      data.append('email', formData.email);
+      data.append('phone', formData.phone);
+      data.append('password', formData.password);
+      if (logoFile) {
+        data.append('logo', logoFile);
+      }
+
+      const res = await signupOrg(data);
+      if (res.data && res.data.success) {
+        alert(`Company Registered successfully!\nYour generated Admin ID is: ${res.data.data.employee.employee_id}\n\nPlease check your email (or backend terminal Ethereal logs) for the verification link before logging in.`);
+        router.push('/login');
+      } else {
+        alert(res.data?.error || 'Registration failed.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Registration failed. Please try again.');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleLogoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -88,9 +129,19 @@ export default function SignupPage() {
 
         {/* Right Side - Logo Upload */}
         <div className="w-48 shrink-0 flex flex-col items-center justify-start pt-2 md:pt-16 mx-auto md:mx-0">
-          <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-pink-500 hover:text-pink-600 transition-colors cursor-pointer bg-gray-50">
-            <Upload className="w-8 h-8 mb-2" />
-            <span className="text-xs font-medium">Upload Logo</span>
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+          <div 
+            onClick={handleLogoClick}
+            className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-pink-500 hover:text-pink-600 transition-colors cursor-pointer bg-gray-50 overflow-hidden"
+          >
+            {logoPreview ? (
+              <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 mb-2" />
+                <span className="text-xs font-medium">Upload Logo</span>
+              </>
+            )}
           </div>
         </div>
       </div>

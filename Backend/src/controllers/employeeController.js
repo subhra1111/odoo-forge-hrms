@@ -137,10 +137,12 @@ const getEmployees = async (req, res) => {
  */
 const getEmployeeById = async (req, res) => {
   try {
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      company_id: req.user.company_id
-    })
+    const isObjectId = req.params.id.match(/^[0-9a-fA-F]{24}$/);
+    const query = isObjectId
+      ? { _id: req.params.id, company_id: req.user.company_id }
+      : { employee_id: req.params.id.toUpperCase(), company_id: req.user.company_id };
+
+    const employee = await Employee.findOne(query)
       .select('-password_hash -verificationToken -verificationTokenExpires')
       .populate('manager_id', 'name employee_id email');
 
@@ -256,8 +258,9 @@ const updateEmployeeProfile = async (req, res) => {
  */
 const addSkill = async (req, res) => {
   try {
-    const { skill_name } = req.body;
-    if (!skill_name || !skill_name.trim()) {
+    const { skill_name, name, proficiency } = req.body;
+    const inputSkill = skill_name || (name ? JSON.stringify({ name, proficiency }) : null);
+    if (!inputSkill || !inputSkill.trim()) {
       return res.status(400).json({ success: false, error: 'Skill name is required' });
     }
 
@@ -271,8 +274,17 @@ const addSkill = async (req, res) => {
     }
 
     // Check if skill already exists to avoid duplicates
-    const normalizedSkill = skill_name.trim();
-    if (employee.skills.some(s => s.toLowerCase() === normalizedSkill.toLowerCase())) {
+    const normalizedSkill = inputSkill.trim();
+    const isDuplicate = employee.skills.some(s => {
+      try {
+        const parsedExisting = JSON.parse(s);
+        const parsedNew = JSON.parse(normalizedSkill);
+        return parsedExisting.name.toLowerCase() === parsedNew.name.toLowerCase();
+      } catch (e) {}
+      return s.toLowerCase() === normalizedSkill.toLowerCase();
+    });
+
+    if (isDuplicate) {
       return res.status(400).json({ success: false, error: 'Skill already exists on profile' });
     }
 
@@ -307,9 +319,15 @@ const deleteSkill = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Employee not found' });
     }
 
-    employee.skills = employee.skills.filter(
-      skill => skill.toLowerCase() !== decodeURIComponent(skillName).toLowerCase()
-    );
+    employee.skills = employee.skills.filter(skill => {
+      try {
+        const parsed = JSON.parse(skill);
+        if (parsed.name.toLowerCase() === decodeURIComponent(skillName).toLowerCase()) {
+          return false;
+        }
+      } catch (e) {}
+      return skill.toLowerCase() !== decodeURIComponent(skillName).toLowerCase();
+    });
     await employee.save();
 
     return res.status(200).json({
@@ -330,8 +348,9 @@ const deleteSkill = async (req, res) => {
  */
 const addCertification = async (req, res) => {
   try {
-    const { certification_name } = req.body;
-    if (!certification_name || !certification_name.trim()) {
+    const { certification_name, name, issuedBy, issueDate } = req.body;
+    const inputCert = certification_name || (name ? JSON.stringify({ name, issuedBy, issueDate }) : null);
+    if (!inputCert || !inputCert.trim()) {
       return res.status(400).json({ success: false, error: 'Certification name is required' });
     }
 
@@ -344,8 +363,17 @@ const addCertification = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Employee not found' });
     }
 
-    const normalizedCert = certification_name.trim();
-    if (employee.certifications.some(c => c.toLowerCase() === normalizedCert.toLowerCase())) {
+    const normalizedCert = inputCert.trim();
+    const isDuplicate = employee.certifications.some(c => {
+      try {
+        const parsedExisting = JSON.parse(c);
+        const parsedNew = JSON.parse(normalizedCert);
+        return parsedExisting.name.toLowerCase() === parsedNew.name.toLowerCase();
+      } catch (e) {}
+      return c.toLowerCase() === normalizedCert.toLowerCase();
+    });
+
+    if (isDuplicate) {
       return res.status(400).json({ success: false, error: 'Certification already exists on profile' });
     }
 
@@ -380,9 +408,15 @@ const deleteCertification = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Employee not found' });
     }
 
-    employee.certifications = employee.certifications.filter(
-      cert => cert.toLowerCase() !== decodeURIComponent(certName).toLowerCase()
-    );
+    employee.certifications = employee.certifications.filter(cert => {
+      try {
+        const parsed = JSON.parse(cert);
+        if (parsed.name.toLowerCase() === decodeURIComponent(certName).toLowerCase()) {
+          return false;
+        }
+      } catch (e) {}
+      return cert.toLowerCase() !== decodeURIComponent(certName).toLowerCase();
+    });
     await employee.save();
 
     return res.status(200).json({

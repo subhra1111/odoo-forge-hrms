@@ -11,11 +11,10 @@ export function Sidebar() {
   const role = user?.role || 'employee';
 
   const navItems = [
-    { name: 'Dashboard', href: `/dashboard/${role}`, icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Attendance', href: '/attendance', icon: CalendarDays },
-    { name: 'Leave', href: '/leave', icon: CalendarClock },
-    { name: 'Payroll', href: '/payroll', icon: CircleDollarSign },
-    { name: 'Profile', href: '/profile', icon: UserIcon },
+    { name: 'Leave', href: '/timeoff', icon: CalendarClock },
+    { name: 'Profile', href: '/profile/me', icon: UserIcon },
   ];
 
   return (

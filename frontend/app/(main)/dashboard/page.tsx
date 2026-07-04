@@ -2,33 +2,85 @@
 
 import { Settings, Plus, XCircle, Search, Plane } from 'lucide-react';
 import Link from 'next/link';
-import { mockEmployees } from '@/lib/mockData';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getEmployees, onboardEmployee } from '@/lib/api';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'Admin' || user?.role === 'HR';
+  
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
+  // Form states for onboarding
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newRole, setNewRole] = useState('Employee');
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const res = await getEmployees({ search: searchQuery });
+      if (res.data && res.data.success) {
+        setEmployees(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load employee directory:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [searchQuery]);
+
+  const handleOnboard = async () => {
+    if (!newName || !newEmail || !newDepartment) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    try {
+      const res = await onboardEmployee({
+        name: newName,
+        email: newEmail,
+        department: newDepartment,
+        role: newRole,
+      });
+
+      if (res.data && res.data.success) {
+        alert(`Employee Onboarded successfully!\nGenerated ID: ${res.data.data.employee_id}\nCredentials and instructions have been emailed.`);
+        setShowAddModal(false);
+        // Clear Form
+        setNewName('');
+        setNewEmail('');
+        setNewDepartment('');
+        setNewRole('Employee');
+        // Refresh Directory
+        fetchEmployees();
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to onboard employee.');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Present': 
         return <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm" title="Present"></div>;
       case 'Leave': 
-        return <Plane className="w-4 h-4 text-blue-500 rotate-45" title="On Leave" />;
+        return <Plane className="w-4 h-4 text-blue-500 rotate-45" />;
       case 'Absent': 
+      default:
         return <div className="w-3 h-3 rounded-full bg-yellow-400 shadow-sm" title="Absent"></div>;
-      default: 
-        return <div className="w-3 h-3 rounded-full bg-gray-300 shadow-sm" title="Unknown"></div>;
     }
   };
-
-  const filteredEmployees = mockEmployees.filter(emp => 
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -62,40 +114,47 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Employee Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredEmployees.map((emp) => (
-          <Link href={`/profile/${emp.id}`} key={emp.id} className="block group">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 transition-all hover:border-pink-300 hover:shadow-lg relative overflow-hidden">
-              
-              {/* Status Icon */}
-              <div className="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100 group-hover:bg-white transition-colors">
-                 {getStatusIcon(emp.status)}
-              </div>
-              
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative">
-                  <img 
-                    src={emp.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=fce7f3&color=db2777`} 
-                    alt={emp.name}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
-                  />
+      {/* Loading state */}
+      {loading ? (
+        <div className="text-center py-12 text-gray-500 font-medium">Loading Directory...</div>
+      ) : employees.length === 0 ? (
+        <div className="text-center py-12 text-gray-500 font-medium">No employees found.</div>
+      ) : (
+        /* Employee Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {employees.map((emp) => (
+            <Link href={`/profile/${emp.employee_id}`} key={emp.employee_id} className="block group">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 transition-all hover:border-pink-300 hover:shadow-lg relative overflow-hidden">
+                
+                {/* Status Icon */}
+                <div className="absolute top-4 right-4 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100 group-hover:bg-white transition-colors">
+                  {getStatusIcon(emp.profileStatus || 'Absent')}
                 </div>
                 
-                <div className="text-center">
-                  <h3 className="font-semibold text-gray-900 text-lg group-hover:text-pink-600 transition-colors">{emp.name}</h3>
-                  <p className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full inline-block mt-1 mb-2">
-                    {emp.role}
-                  </p>
-                  <p className="text-sm text-gray-600 font-medium">{emp.designation}</p>
-                  <p className="text-xs text-gray-400 mt-1">{emp.department}</p>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <img 
+                      src={emp.profilePicture ? `http://localhost:5000${emp.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=fce7f3&color=db2777`} 
+                      alt={emp.name}
+                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 group-hover:border-pink-50 transition-colors"
+                    />
+                  </div>
+                  
+                  <div className="text-center">
+                    <h3 className="font-semibold text-gray-900 text-lg group-hover:text-pink-600 transition-colors">{emp.name}</h3>
+                    <p className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full inline-block mt-1 mb-2">
+                      {emp.role}
+                    </p>
+                    <p className="text-sm text-gray-600 font-medium">{emp.employee_id}</p>
+                    <p className="text-xs text-gray-400 mt-1">{emp.department || 'No Department'}</p>
+                  </div>
                 </div>
+                
               </div>
-              
-            </div>
-          </Link>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Add Employee Modal */}
       {showAddModal && (
@@ -110,28 +169,50 @@ export default function DashboardPage() {
             <div className="p-6 space-y-4 text-sm">
                <div className="flex flex-col space-y-1.5">
                   <label className="text-gray-700 font-medium">Name</label>
-                  <input type="text" className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" placeholder="John Doe" />
+                  <input 
+                    type="text" 
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
+                    placeholder="John Doe" 
+                  />
                </div>
                <div className="flex flex-col space-y-1.5">
                   <label className="text-gray-700 font-medium">Email</label>
-                  <input type="email" className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" placeholder="john@example.com" />
+                  <input 
+                    type="email" 
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
+                    placeholder="john@example.com" 
+                  />
                </div>
                <div className="flex flex-col space-y-1.5">
                   <label className="text-gray-700 font-medium">Department</label>
-                  <input type="text" className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" placeholder="Engineering" />
+                  <input 
+                    type="text" 
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all" 
+                    placeholder="Engineering" 
+                  />
                </div>
                <div className="flex flex-col space-y-1.5">
                   <label className="text-gray-700 font-medium">Role</label>
-                  <select className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all">
-                    <option>Employee</option>
-                    <option>Admin</option>
-                    <option>HR</option>
+                  <select 
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-gray-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-all"
+                  >
+                    <option value="Employee">Employee</option>
+                    <option value="Admin">Admin</option>
+                    <option value="HR">HR</option>
                   </select>
                </div>
             </div>
             <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex justify-end space-x-3">
                <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors" onClick={() => setShowAddModal(false)}>Cancel</button>
-               <button className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onClick={() => setShowAddModal(false)}>Create Employee</button>
+               <button className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onClick={handleOnboard}>Create Employee</button>
             </div>
           </div>
         </div>

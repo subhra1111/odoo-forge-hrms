@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
-import { mockEmployees } from '@/lib/mockData';
+import { loginAPI } from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,26 +13,31 @@ export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore(state => state.login);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Mock Authentication Logic
-    const user = mockEmployees.find(emp => emp.email === email || emp.id === email);
-    
-    if (user && password === 'Password@123') {
-      login({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role as any,
-        department: user.department,
-        avatar: user.avatar,
-      }, 'mock-jwt-token-12345');
-      
-      router.push('/dashboard');
-    } else {
-      setError('Invalid email/ID or password (use Password@123)');
+    try {
+      const response = await loginAPI(email, password);
+      if (response.data && response.data.success) {
+        const token = response.data.token;
+        const employee = response.data.data;
+        login({
+          id: employee.employee_id,
+          name: employee.name,
+          email: employee.email,
+          role: employee.role,
+          department: employee.department,
+          avatar: employee.profilePicture ? `http://localhost:5000${employee.profilePicture}` : undefined,
+        }, token);
+        
+        router.push('/dashboard');
+      } else {
+        setError(response.data?.error || 'Invalid credentials');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Invalid credentials or server connection failed.');
     }
   };
 
